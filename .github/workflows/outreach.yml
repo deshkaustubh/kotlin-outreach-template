@@ -20,6 +20,13 @@ jobs:
         with:
           kotlin-version: '1.9.20'
 
+      - name: Verify runtimes
+        run: |
+          echo "=== java ==="
+          java -version
+          echo "=== kotlinc ==="
+          kotlinc -version
+
       - name: Execute Script
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
