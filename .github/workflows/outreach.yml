@@ -3,13 +3,13 @@ name: AI Hackathon Outreach
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # 12 AM, 6 AM, 12 PM, 6 PM UTC
+    - cron: '0 */6 * * *' # Every 6 hours
 
 jobs:
   send-emails:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Needed to save CSV progress
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -25,13 +25,6 @@ jobs:
         run: |
           sudo snap install --classic kotlin
 
-      - name: Verify runtimes
-        run: |
-          echo "=== java ==="
-          java -version
-          echo "=== kotlinc ==="
-          kotlinc -version
-
       - name: Execute Script
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
@@ -39,13 +32,13 @@ jobs:
           EMAIL_SUBJECT: ${{ secrets.EMAIL_SUBJECT }}
           EMAIL_BODY: ${{ secrets.EMAIL_BODY }}
         run: |
-          kotlinc -script outreach.main.kts
+          # Pointing directly to the script inside the 'script' folder
+          kotlinc -script script/outreach.main.kts
 
       - name: Commit Progress
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add data/recipients.csv || echo "No private CSV found"
-          git add data/recipients.sample.csv || echo "No sample CSV found"
+          git add data/recipients.csv
           git commit -m "Update send status [skip ci]" || echo "No changes to commit"
           git push
