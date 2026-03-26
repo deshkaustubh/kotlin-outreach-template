@@ -7,32 +7,33 @@ import org.simplejavamail.email.EmailBuilder
 import org.simplejavamail.mailer.MailerBuilder
 import java.io.File
 import java.time.LocalDateTime
+import java.util.Random
 
 /**
- * AI MOBILE HACKATHON 2026 - OUTREACH ENGINE
- * Coordinator: Kaustubh Deshpande
+ * GENERIC OUTREACH ENGINE (Template Version)
+ * Features: Randomized Jitter, Anti-Injection, and Multi-part MIME (Plain Text + HTML)
  */
 
 val gmailUser = System.getenv("GMAIL_USER")
 val gmailPass = System.getenv("GMAIL_PASS")
-val subjectTemplate = System.getenv("EMAIL_SUBJECT") ?: "Join the AI Mobile Hackathon 2026, {{Name}}!"
-val bodyTemplate = System.getenv("EMAIL_BODY") ?: "Hi {{Name}}, let's build AI apps!"
+val subjectTemplate = System.getenv("EMAIL_SUBJECT") ?: "Hello {{Name}}, reaching out!"
+val bodyTemplate = System.getenv("EMAIL_BODY") ?: "Hi {{Name}},\n\nThis is a template email. Please update your GitHub Secrets to change this message."
 
 val csvFile = File("data/recipients.csv")
 val sampleFile = File("data/recipients.sample.csv")
 
 fun main() {
     println("--- Batch Started: ${LocalDateTime.now()} ---")
+    val random = Random()
 
     if (gmailUser.isNullOrBlank() || gmailPass.isNullOrBlank()) {
-        println("ERROR: Credentials missing in Environment Variables.")
+        println("ERROR: SMTP Credentials missing in GitHub Secrets.")
         return
     }
 
-    // Determine which file to use (Private CSV takes priority over Sample)
     val activeFile = if (csvFile.exists()) csvFile else sampleFile
     if (!activeFile.exists()) {
-        println("ERROR: No data found in data/ folder.")
+        println("ERROR: No recipient file found at data/recipients.csv")
         return
     }
 
@@ -42,7 +43,7 @@ fun main() {
     val header = lines[0]
     val records = lines.drop(1)
     val updatedLines = mutableListOf<String>()
-    updatedLines.add(header) // Preserve the header at the top
+    updatedLines.add(header)
 
     val mailer = MailerBuilder
         .withSMTPServer("smtp.gmail.com", 465, gmailUser, gmailPass)
@@ -50,48 +51,59 @@ fun main() {
         .buildMailer()
 
     var sentCount = 0
-    val BATCH_LIMIT = 10
+    // Default limit for template users to prevent accidental spamming
+    val BATCH_LIMIT = 5
 
     for (line in records) {
         val cols = line.split(",").map { it.trim() }
-        val name = cols.getOrNull(0)?.ifBlank { "Developer" } ?: "Developer"
+        val name = cols.getOrNull(0)?.ifBlank { "User" } ?: "User"
         val email = cols.getOrNull(1)
         val status = cols.getOrNull(2) ?: ""
 
-        // Logic: Send if status is empty OR contains an Error (Retry)
         val isAlreadySent = status.contains("Sent at", ignoreCase = true)
         val isPending = status.isBlank() || status.contains("Error", ignoreCase = true)
 
         if (sentCount < BATCH_LIMIT && !email.isNullOrBlank() && isPending && !isAlreadySent) {
             try {
-                val personalSubject = subjectTemplate.replace("{{Name}}", name)
+                // Anti-Injection: Ensures subject is clean plain text
+                val cleanSubject = subjectTemplate
+                    .replace("{{Name}}", name)
+                    .replace(Regex("<[^>]*>"), "")
+                    .replace("\n", " ")
+                    .trim()
+
                 val personalBody = bodyTemplate.replace("{{Name}}", name)
 
                 val emailObj = EmailBuilder.startingBlank()
-                    .from("Kaustubh Deshpande", gmailUser)
+                    .from("Outreach Coordinator", gmailUser)
                     .to(name, email)
-                    .withSubject(personalSubject)
+                    .withReplyTo(gmailUser)
+                    .withSubject(cleanSubject)
                     .withHTMLText(personalBody)
+                    // Plain Text fallback for better deliverability
+                    .withPlainText("Hi $name,\n\nI am reaching out regarding our upcoming project. Please check the HTML version of this email for full details.\n\nBest regards.")
                     .buildEmail()
 
                 mailer.sendMail(emailObj)
 
                 updatedLines.add("$name,$email,Sent at ${LocalDateTime.now()}")
                 sentCount++
-                println("SUCCESS: $name ($email)")
+                println("SUCCESS: Sent to $email")
 
-                Thread.sleep(3000) // Anti-spam delay
+                // Human-mimicry delay: 8s to 20s
+                val waitTime = random.nextInt(12000) + 8000
+                println("Waiting ${waitTime/1000}s...")
+                Thread.sleep(waitTime.toLong())
+
             } catch (e: Exception) {
                 println("FAILED: $email - ${e.message}")
                 updatedLines.add("$name,$email,Error: ${e.message?.take(15)}")
             }
         } else {
-            // Keep the line as is (already sent or batch limit reached)
             updatedLines.add(line)
         }
     }
 
-    // Rewrite the CSV with updated statuses
     activeFile.writeText(updatedLines.joinToString("\n"))
     println("--- Batch Complete. Total Sent: $sentCount ---")
 }
