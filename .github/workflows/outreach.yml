@@ -1,9 +1,9 @@
-name: AI Hackathon Outreach
+name: Outreach Workflow
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Every 6 hours
+    - cron: '0 */8 * * *' # Runs 3 times a day (e.g., 5:30 AM, 1:30 PM, 9:30 PM IST)
 
 jobs:
   send-emails:
@@ -15,15 +15,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Optimization: Minimal jitter (1-10 mins) to save private repo minutes
+      - name: Randomize Start Time
+        run: |
+          DELAY=$((1 + RANDOM % 10))
+          echo "Waiting for $DELAY minutes to mimic human start time..."
+          sleep $((DELAY * 60))
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # Optimization: Fast Kotlin setup (Avoids slow snap install)
       - name: Install Kotlin
         run: |
-          sudo snap install --classic kotlin
+          curl -sSL https://github.com/JetBrains/kotlin/releases/download/v1.9.22/kotlin-compiler-1.9.22.zip -o kotlin.zip
+          unzip -q kotlin.zip
+          echo "$(pwd)/kotlinc/bin" >> $GITHUB_PATH
 
       - name: Execute Script
         env:
@@ -32,7 +42,6 @@ jobs:
           EMAIL_SUBJECT: ${{ secrets.EMAIL_SUBJECT }}
           EMAIL_BODY: ${{ secrets.EMAIL_BODY }}
         run: |
-          # Pointing directly to the script inside the 'script' folder
           kotlinc -script script/outreach.main.kts
 
       - name: Commit Progress
