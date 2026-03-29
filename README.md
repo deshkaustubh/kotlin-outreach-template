@@ -17,23 +17,6 @@ The engine uses Kotlin Scripting and GitHub Actions to automate personalized out
 
 ---
 
-## Project Structure & Data Formatting
-
-### 1. The Data Folder (/data)
-To comply with privacy standards, your actual mailing list is ignored by Git via .gitignore.
-
-- **recipients.sample.csv**: A public example of the required format.
-- **recipients.csv**: (Create this file manually). Paste your leads here.
-
-### CSV Column Structure:
-| Name | Email | Status (Leave Empty) |
-| :--- | :--- | :--- |
-| John Doe | john@example.com | |
-
-*The engine updates the 3rd column automatically upon success.*
-
----
-
 ## Setup Instructions
 
 ### 1. Repository Setup
@@ -100,27 +83,6 @@ A standalone Kotlin script that handles:
 - **SMTP SSL/TLS Connection** via Port 465.
 - **HTML Content Rendering** for professional-looking "Card" layouts.
 - **Batch Limiting** to stay within Gmail's safety limits.
-
----
-
-## Setup Instructions (The "Coordinator" Workflow)
-
-### 1. Repository Setup
-1. Click **"Use this template"** and create a **Private** repository.
-2. Upload your `data/recipients.csv` to your new private repo.
-
-### 2. Security (GitHub Secrets)
-Go to **Settings > Secrets and variables > Actions** and add:
-- `GMAIL_USER`: Your Gmail address.
-- `GMAIL_PASS`: Your 16-character **Google App Password**.
-- `EMAIL_SUBJECT`: `Exciting News for {{Name}}! AI Mobile Hackathon 2026`
-- `EMAIL_BODY`: Your full HTML template code.
-
-### 3. Permissions
-Go to **Settings > Actions > General**. Under **Workflow permissions**, select **"Read and write permissions"**. This allows the script to update your CSV file after sending emails.
-
-### 4. Automation
-The script is set to run every 6 hours via `.github/workflows/outreach.yml`. You can also trigger it manually by going to the **Actions** tab and clicking **"Run workflow"**.
 
 ---
 
