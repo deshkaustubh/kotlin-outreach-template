@@ -7,6 +7,12 @@ This repository is a Reusable Template for automated, high-fidelity email outrea
 ## How it Works
 The engine uses Kotlin Scripting and GitHub Actions to automate personalized outreach. It follows a "Human-Mimicry" strategy to ensure high deliverability and protect your sender reputation.
 
+<p align="center">
+  <a href="https://youtu.be/tQ78S-ecdVE" target="_blank" rel="noopener noreferrer">
+    <img src=".README_images/0b36a409.png" alt="Kotlin Outreach Engine — demo video preview" />
+  </a>
+</p>
+
 ### Key Optimizations:
 1. **Deliverability Shield:** Uses Multi-part MIME (HTML + Plain Text fallback) and Anti-Injection logic to ensure emails land in the Primary Tab, not Spam.
 2. **Human-Mimicry Jitter:**
